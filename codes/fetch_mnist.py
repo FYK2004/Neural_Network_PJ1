@@ -1,4 +1,3 @@
-"""缺省时下载 MNIST 四个 .gz（stdlib）。"""
 from __future__ import annotations
 
 import os

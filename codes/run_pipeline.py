@@ -1,4 +1,3 @@
-"""Part A→B→叠图→Part C；子进程 python -u。可选 --pause-between-steps。"""
 from __future__ import annotations
 
 import argparse

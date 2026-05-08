@@ -1,4 +1,3 @@
-"""MNIST 训练 CLI。"""
 import argparse
 import gzip
 import os

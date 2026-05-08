@@ -1,4 +1,3 @@
-"""Part A: MLP baseline，SGD 8 epoch；约每 100 iter 验 dev；--eval_test。"""
 from __future__ import annotations
 
 import sys

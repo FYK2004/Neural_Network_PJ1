@@ -1,4 +1,3 @@
-"""Part C: baseline / cosine LR / dropout；默认 MLP+CNN；约每 100 iter 验 dev；默认 5 epoch。"""
 from __future__ import annotations
 
 import argparse

@@ -1,4 +1,3 @@
-"""Part B: CNN，与 Part A 同设置；需先有 idx.pickle（先跑 Part A 或同划分）。"""
 from __future__ import annotations
 
 import sys

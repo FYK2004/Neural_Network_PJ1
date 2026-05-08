@@ -1,4 +1,4 @@
-"""第一层/全连接权重可视化示例。"""import gzip
+import gzip
 import os
 import pickle
 from struct import unpack

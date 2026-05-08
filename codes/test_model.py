@@ -1,4 +1,3 @@
-"""已保存 MLP 在 MNIST test 上评测。"""
 import argparse
 import gzip
 import os
