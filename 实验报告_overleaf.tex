@@ -1,0 +1,185 @@
+% ============================================================
+% 用法：在 Overleaf 新建项目 → 删除默认 main.tex 内容 → 全文粘贴本文件。
+% 菜单 Compiler 请选择：XeLaTeX（中文）。
+% 插图：将 codes/figs/ 下 PNG 上传到 Overleaf（如建文件夹 figures/），
+%       再取消对应 \includegraphics 行的注释并改为正确文件名。
+% ============================================================
+\documentclass[UTF8,a4paper]{ctexart}
+\usepackage{geometry}
+\geometry{margin=2.2cm}
+\usepackage{graphicx}
+\usepackage{booktabs}
+\usepackage{hyperref}
+\usepackage{listings}
+\hypersetup{colorlinks=true, linkcolor=blue, urlcolor=blue}
+
+\lstset{
+  basicstyle=\ttfamily\small,
+  breaklines=true,
+  frame=single,
+  tabsize=2,
+}
+
+\title{MNIST 分类实验报告（MLP / CNN / 拓展）}
+\author{（姓名 / 学号）}
+\date{\today}
+
+\begin{document}
+\maketitle
+
+\noindent\textbf{课程：}神经网络 \quad \textbf{实现：}NumPy（\texttt{codes/mynn}）\\
+\textbf{数据：}MNIST（\texttt{codes/dataset/MNIST/}，缺文件时 \texttt{fetch\_mnist} 可自动下载）
+
+\section{实验目的}
+\begin{enumerate}
+  \item 在 MNIST 上实现并训练 \textbf{MLP} 与 \textbf{CNN}，比较二者在相同优化设定下的验证集与官方测试集表现。
+  \item 在固定协议下开展 \textbf{Part C}：恒定学习率基线、余弦退火学习率、Dropout 正则，分别在 MLP 与 CNN 上观察趋势。
+  \item 熟悉训练—验证—测试流程、checkpoint 选择与指标记录方式。
+\end{enumerate}
+
+\section{数据与划分}
+\begin{itemize}
+  \item \textbf{训练图像：}\texttt{train-images-idx3-ubyte.gz}，标签 \texttt{train-labels-idx1-ubyte.gz}。
+  \item \textbf{官方测试集：}\texttt{t10k-images-idx3-ubyte.gz} / \texttt{t10k-labels-idx1-ubyte.gz}（仅最终评估；脚本通过 \texttt{-{}-eval\_test}，用 \textbf{best dev} 权重评测）。
+  \item \textbf{划分：}打乱后 60k 中取前 10000 为 \textbf{dev}，后 50000 训练；由种子与 \texttt{idx.pickle} 固定。Part B/C 使用 \texttt{-{}-reuse\_idx} 与 Part A 同划分。
+\end{itemize}
+
+\section{模型与训练设置概要}
+
+\subsection{MLP（Part A）}
+\begin{itemize}
+  \item 结构（\texttt{test\_train.build\_model}）：\textbf{784 $\to$ 600 $\to$ 10}，隐藏层 ReLU，Softmax+交叉熵（\texttt{MultiCrossEntropyLoss}）。
+  \item 优化：SGD，$lr=0.06$，无调度，无 Dropout（Part A）。
+\end{itemize}
+
+\subsection{CNN（Part B）}
+\begin{itemize}
+  \item 结构见 \texttt{mynn/models.py} 中 \texttt{Model\_CNN}。
+  \item 优化设定与 Part A 对齐（公平对比），仅模型不同。
+\end{itemize}
+
+\subsection{监控与保存}
+\begin{itemize}
+  \item \texttt{eval\_interval=100}：约每 100 个 training iteration 在 dev 上评估一次（见 \texttt{mynn/runner.py}）。
+  \item 以 dev 准确率最高保存 \texttt{best\_model.pickle}。
+  \item \texttt{-{}-save\_fig} 保存曲线 PNG；\texttt{-{}-save\_metrics} 保存 \texttt{.npz}（含 \texttt{best\_score}；若开 \texttt{-{}-eval\_test} 则含 \texttt{test\_acc}/\texttt{test\_loss}）。
+\end{itemize}
+
+\section{实验配置表（与当前脚本一致）}
+\begin{table}[htbp]
+  \centering
+  \small
+  \begin{tabular}{lccc}
+    \toprule
+    项目 & Part A（MLP） & Part B（CNN） & Part C（每组） \\
+    \midrule
+    Epoch & 8 & 8 & 5（默认） \\
+    Batch size & 64 & 64 & 64 \\
+    优化器 & SGD，$lr{=}0.06$ & 同左 & 同左 \\
+    Seed & 309 & 309 & 309 \\
+    Scheduler & none & none & baseline：none；cosine：CosineAnnealingLR（epoch，$\eta_{\min}{=}0$）；dropout 组：none \\
+    Dropout & 0 & 0 & baseline/cosine：0；正则组：0.5 \\
+    \texttt{eval\_interval} & 100 & 100 & 100 \\
+    \texttt{log\_iters} & 100 & 100 & 100 \\
+    测试集 & \texttt{-{}-eval\_test} & \texttt{-{}-eval\_test} & \texttt{-{}-eval\_test} \\
+    \bottomrule
+  \end{tabular}
+\end{table}
+
+\noindent\textbf{Part C 默认：}\texttt{python run\_part\_c.py} 对 MLP 与 CNN 各跑三轮（baseline $\to$ cosine $\to$ dropout），生成 \texttt{figs/part\_c\_\{mlp,cnn\}\_overlay.png}。
+
+\noindent\textbf{一键复现（\texttt{codes/}）：}\texttt{python run\_pipeline.py}
+
+\section{实验结果}
+
+\subsection{Part A / Part B（MLP vs CNN）}
+将终端中 \texttt{[mlp]} / \texttt{[cnn]} 的 best dev 与 test 填入表~\ref{tab:ab}。插图上传到 Overleaf 后使用 \texttt{\textbackslash includegraphics}。
+
+\begin{table}[htbp]
+  \centering
+  \caption{MLP vs CNN（请填写）}
+  \label{tab:ab}
+  \begin{tabular}{lccc}
+    \toprule
+    模型 & Best dev acc & Test acc & Test loss \\
+    \midrule
+    MLP & （填写） & （填写） & （填写） \\
+    CNN & （填写） & （填写） & （填写） \\
+    \bottomrule
+  \end{tabular}
+\end{table}
+
+\begin{figure}[htbp]
+  \centering
+  % \includegraphics[width=0.42\linewidth]{figures/part_a_mlp_learning_curve.png}\hfill
+  % \includegraphics[width=0.42\linewidth]{figures/part_b_cnn_learning_curve.png}
+  \fbox{\parbox[c][2.5cm][c]{0.88\linewidth}{\centering \small 占位：上传 \texttt{part\_a\_mlp\_learning\_curve.png}、\texttt{part\_b\_cnn\_learning\_curve.png} 后取消注释 \texttt{includegraphics}}}
+  \caption{Part A / Part B 学习曲线（占位）}
+\end{figure}
+
+\begin{figure}[htbp]
+  \centering
+  % \includegraphics[width=0.75\linewidth]{figures/part_ab_mlp_vs_cnn_overlay.png}
+  \fbox{\parbox[c][2.2cm][c]{0.75\linewidth}{\centering \small 占位：\texttt{part\_ab\_mlp\_vs\_cnn\_overlay.png}（若已跑 pipeline）}}
+  \caption{MLP vs CNN 验证曲线叠图（占位）}
+\end{figure}
+
+\noindent\textbf{简要分析（自行撰写）：}收敛速度、过拟合、CNN 相对 MLP 的 dev/test 差异等。
+
+\subsection{Part C（组内对比）}
+
+\begin{table}[htbp]
+  \centering
+  \caption{Part C --- MLP（请填写）}
+  \begin{tabular}{lccc}
+    \toprule
+    设置 & Dev（best） & Test acc & Test loss \\
+    \midrule
+    Baseline & & & \\
+    Cosine LR & & & \\
+    Dropout 0.5 & & & \\
+    \bottomrule
+  \end{tabular}
+\end{table}
+
+\begin{table}[htbp]
+  \centering
+  \caption{Part C --- CNN（请填写）}
+  \begin{tabular}{lccc}
+    \toprule
+    设置 & Dev（best） & Test acc & Test loss \\
+    \midrule
+    Baseline & & & \\
+    Cosine LR & & & \\
+    Dropout 0.5 & & & \\
+    \bottomrule
+  \end{tabular}
+\end{table}
+
+\begin{figure}[htbp]
+  \centering
+  % \includegraphics[width=0.42\linewidth]{figures/part_c_mlp_overlay.png}\hfill
+  % \includegraphics[width=0.42\linewidth]{figures/part_c_cnn_overlay.png}
+  \fbox{\parbox[c][2.2cm][c]{0.88\linewidth}{\centering \small 占位：\texttt{part\_c\_mlp\_overlay.png}、\texttt{part\_c\_cnn\_overlay.png}}}
+  \caption{Part C 叠图（占位）}
+\end{figure}
+
+\noindent\textbf{简要分析（自行撰写）：}余弦退火在当前 Part C epoch 设置下的效果；Dropout 对曲线与泛化；MLP 与 CNN 上差异的原因。
+
+\section{结论}
+（3--5 句话：MLP/CNN 对比；Part C 是否符合预期；不符时的可能原因。）
+
+\section{复现命令摘要}
+\begin{lstlisting}
+cd codes
+python run_part_a.py
+python run_part_b.py
+python run_part_c.py
+# 或
+python run_pipeline.py
+\end{lstlisting}
+
+\section*{声明}
+待填数值与讨论须根据本机日志与 \texttt{figs/}、\texttt{best\_models/} 填写；若修改 \texttt{run\_part\_*.py}，请以实际脚本为准更新第 4 节表格。
+
+\end{document}

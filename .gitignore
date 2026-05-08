@@ -1,0 +1,39 @@
+# Python
+__pycache__/
+*.py[cod]
+*$py.class
+.Python
+.venv/
+venv/
+.env
+
+# Jupyter
+.ipynb_checkpoints/
+
+# MNIST 原始数据（体积大）
+**/MNIST/*.gz
+
+# 训练权重与划分（可重新训练生成）
+best_models/
+**/best_models/
+idx.pickle
+**/idx.pickle
+*.pickle
+
+# 指标缓存（可重新生成）
+*.npz
+
+# 压缩包（通常不应进仓库）
+*.zip
+
+# OS / IDE
+.DS_Store
+Thumbs.db
+.idea/
+.vscode/
+
+# LaTeX 中间文件
+*.aux
+*.log
+*.out
+*.synctex.gz
