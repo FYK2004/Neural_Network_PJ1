@@ -24,12 +24,6 @@ def load_mnist(train_images_path, train_labels_path):
     return train_imgs, train_labs
 
 
-def _parse_int_list(s):
-    if not s:
-        return []
-    return [int(x) for x in s.split(',') if x.strip() != '']
-
-
 def build_model(model_name, input_dim, num_classes, dropout_p=0.0):
     if model_name == 'mlp':
         return nn.models.Model_MLP([input_dim, 600, num_classes], 'ReLU', None, dropout_p=dropout_p)
@@ -53,31 +47,18 @@ def main():
     parser.add_argument('--dropout_p', type=float, default=0.0, help='FC Dropout 概率。')
     parser.add_argument(
         '--scheduler',
-        choices=['none', 'multistep', 'step', 'exponential', 'cosine'],
+        choices=['none', 'cosine'],
         default='none',
-        help='LR 调度：none / multistep / step / exponential / cosine。',
+        help='LR 调度：none | cosine（余弦退火）。',
     )
     parser.add_argument(
         '--scheduler_step_on',
         choices=['epoch', 'iter'],
         default='epoch',
-        help='调度器步进单位：epoch | iter。',
+        help='余弦调度步进单位：epoch | iter。',
     )
-    parser.add_argument(
-        '--milestones',
-        type=str,
-        default='2,4',
-        help='MultiStepLR milestones，逗号分隔。',
-    )
-    parser.add_argument('--gamma', type=float, default=0.5, help='衰减因子。')
     parser.add_argument('--cosine_t_max', type=int, default=0, help='Cosine T_max；0 自动。')
     parser.add_argument('--cosine_eta_min', type=float, default=0.0, help='Cosine 最小 LR。')
-    parser.add_argument(
-        '--step_size',
-        type=int,
-        default=2,
-        help='StepLR 步长。',
-    )
     parser.add_argument('--train_limit', type=int, default=0, help='仅用训练集前 N 条；0 全量。')
     parser.add_argument('--reuse_idx', action='store_true', help='复用已有 idx.pickle。')
     parser.add_argument('--idx_path', type=str, default='idx.pickle', help='划分文件路径。')
@@ -143,26 +124,6 @@ def main():
     optimizer = nn.optimizer.SGD(init_lr=args.lr, model=model)
     if args.scheduler == 'none':
         scheduler = None
-    elif args.scheduler == 'multistep':
-        scheduler = nn.lr_scheduler.MultiStepLR(
-            optimizer=optimizer,
-            milestones=_parse_int_list(args.milestones),
-            gamma=args.gamma,
-            step_on=args.scheduler_step_on,
-        )
-    elif args.scheduler == 'step':
-        scheduler = nn.lr_scheduler.StepLR(
-            optimizer=optimizer,
-            step_size=args.step_size,
-            gamma=args.gamma,
-            step_on=args.scheduler_step_on,
-        )
-    elif args.scheduler == 'exponential':
-        scheduler = nn.lr_scheduler.ExponentialLR(
-            optimizer=optimizer,
-            gamma=args.gamma,
-            step_on=args.scheduler_step_on,
-        )
     elif args.scheduler == 'cosine':
         T_max = int(args.cosine_t_max) if args.cosine_t_max and args.cosine_t_max > 0 else None
         scheduler = nn.lr_scheduler.CosineAnnealingLR(

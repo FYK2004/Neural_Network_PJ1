@@ -18,9 +18,9 @@ def _run_suite(arch: str, epochs: int) -> None:
         '--batch_size',
         '64',
         '--lr',
-        '0.06',
+        '0.1',
         '--seed',
-        '309',
+        '64',
         '--eval_interval',
         '100',
         '--log_iters',
@@ -66,12 +66,12 @@ def _run_suite(arch: str, epochs: int) -> None:
             ],
         ),
         (
-            f'[{tag.upper()}] Direction 2: dropout 0.5 only',
+            f'[{tag.upper()}] Direction 2: dropout 0.3 only',
             [
                 '--scheduler',
                 'none',
                 '--dropout_p',
-                '0.5',
+                '0.3',
                 '--save_dir',
                 rf'.\best_models\part_c_{tag}_dropout',
                 '--save_fig',
@@ -131,7 +131,7 @@ def main() -> None:
     parser.add_argument(
         '--epochs',
         type=int,
-        default=5,
+        default=10,
         help='Epochs per experiment.',
     )
     args = parser.parse_args()
